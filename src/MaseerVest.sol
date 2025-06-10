@@ -21,8 +21,10 @@
 
 pragma solidity ^0.8.13;
 
-import {SafeERC20} from "openzeppelin-contracts/token/ERC20/utils/SafeERC20.sol";
-import {IERC20} from "openzeppelin-contracts/token/ERC20/IERC20.sol";
+interface Gem {
+    function transferFrom(address src, address dst, uint wad) external returns (bool);
+    function transfer(address dst, uint wad) external returns (bool);
+}
 
 abstract contract DssVest {
     // --- Data ---
@@ -389,10 +391,10 @@ abstract contract DssVest {
 */
 contract MaseerVest is DssVest {
 
-    using SafeERC20 for IERC20;
-
     address public immutable czar;
     address public immutable gem;
+
+    error TransferFailed();
 
     /**
         @dev This contract must be approved for transfer of the gem on the czar
@@ -412,6 +414,11 @@ contract MaseerVest is DssVest {
         @param _amt The amount of gem to send to the _guy (in native token units)
     */
     function pay(address _guy, uint256 _amt) override internal {
-        IERC20(gem).safeTransferFrom(czar, _guy, _amt);
+        _safeTransferFrom(gem, czar, _guy, _amt);
+    }
+
+    function _safeTransferFrom(address _token, address _from, address _to, uint256 _amt) internal {
+        (bool success, bytes memory data) = _token.call(abi.encodeWithSelector(Gem.transferFrom.selector, _from, _to, _amt));
+        if (!success || (data.length > 0 && abi.decode(data, (bool)) == false)) revert TransferFailed();
     }
 }
