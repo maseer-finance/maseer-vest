@@ -95,4 +95,57 @@ contract MaseerVestTest is Test {
         assertEq(uint256(rxd), total_amt);
         assertEq(gem.balanceOf(guy), total_amt);
     }
+
+    function testVestUSDC() public {
+        IERC20 _gem = IERC20(USDC);
+        vest = new MaseerVest(org, address(_gem));
+        vest.file("cap", 10000e6); // Set cap to 10000 USDC
+        vm.prank(org);
+        IERC20(USDC).approve(address(vest), type(uint256).max);
+        uint256 total_amt = 300_000 * 1e6; // 300,000 USDT
+        uint256 id = vest.create(guy, total_amt, block.timestamp, 100 days, 0 days, address(0));
+        deal(USDC, address(org), total_amt, true); // Fund the vesting contract with USDT
+
+        assertEq(_gem.balanceOf(guy), 0);
+
+        vm.warp(block.timestamp + 10 days);
+
+        (address usr, uint48 bgn, uint48 clf, uint48 fin, address mgr,, uint128 tot, uint128 rxd) = vest.awards(id);
+        assertEq(usr, guy);
+        assertEq(uint256(bgn), block.timestamp - 10 days);
+        assertEq(uint256(fin), block.timestamp + 90 days);
+        assertEq(uint256(tot), total_amt);
+        assertEq(uint256(rxd), 0);
+        assertEq(_gem.balanceOf(guy), 0);
+
+        vest.vest(id);
+        (usr, bgn, clf, fin, mgr,, tot, rxd) = vest.awards(id);
+        assertEq(usr, guy);
+        assertEq(uint256(bgn), block.timestamp - 10 days);
+        assertEq(uint256(fin), block.timestamp + 90 days);
+        assertEq(uint256(tot), 300000000000);
+        assertEq(uint256(rxd), 30000000000);
+        assertEq(_gem.balanceOf(guy), 30000000000);
+
+        vm.warp(block.timestamp + 70 days);
+
+        vest.vest(id, type(uint256).max);
+        (usr, bgn, clf, fin, mgr,, tot, rxd) = vest.awards(id);
+        assertEq(usr, guy);
+        assertEq(uint256(bgn), block.timestamp - 80 days);
+        assertEq(uint256(fin), block.timestamp + 20 days);
+        assertEq(uint256(tot), 300000000000);
+        assertEq(uint256(rxd), 240000000000);
+        assertEq(_gem.balanceOf(guy), 240000000000);
+
+        vm.warp(block.timestamp + 40 days);
+        vest.vest(id, type(uint256).max);
+        (usr, bgn, clf, fin, mgr,, tot, rxd) = vest.awards(id);
+        assertEq(usr, guy);
+        assertEq(uint256(bgn), block.timestamp - 120 days);
+        assertEq(uint256(fin), block.timestamp - 20 days);
+        assertEq(uint256(tot), total_amt);
+        assertEq(uint256(rxd), total_amt);
+        assertEq(_gem.balanceOf(guy), total_amt);
+    }
 }
