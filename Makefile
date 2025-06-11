@@ -8,7 +8,7 @@ gen-report :; forge coverage --fork-url=${ETH_RPC_URL} --report lcov && genhtml 
 clean      :; forge clean
 
 # Deployment
-dry-run         :; make build && forge script script/MaseerOne.s.sol --rpc-url ${ETH_RPC_URL} -vvvv --keystore ${ETH_KEYSTORE} --priority-gas-price ${ETH_PRIO_FEE} --base-fee ${ETH_GAS_PRICE}
-deploy          :; make build && forge script script/MaseerOne.s.sol --verify --slow --broadcast --rpc-url ${ETH_RPC_URL} -vvvv --keystore ${ETH_KEYSTORE} --priority-gas-price ${ETH_PRIO_FEE} --base-fee ${ETH_GAS_PRICE}
-dry-run-sepolia :; make build && forge script --chain sepolia script/MaseerOne.s.sol --rpc-url ${SEPOLIA_RPC_URL} -vvvv --keystore ${ETH_KEYSTORE} --priority-gas-price ${ETH_PRIO_FEE} --base-fee ${ETH_GAS_PRICE}
-deploy-sepolia  :; make build && forge script --chain sepolia script/MaseerOne.s.sol --verify --slow --broadcast --rpc-url ${SEPOLIA_RPC_URL} -vvvv --keystore ${ETH_KEYSTORE} --priority-gas-price ${ETH_PRIO_FEE} --base-fee ${ETH_GAS_PRICE}
+dry-run         :; make build && forge script script/MaseerVest.s.sol:MaseerVestScript --rpc-url ${ETH_RPC_URL} -vvvv --keystore ${ETH_KEYSTORE} --priority-gas-price ${ETH_PRIO_FEE} --base-fee ${ETH_GAS_PRICE}
+deploy          :; make build && forge script script/MaseerVest.s.sol:MaseerVestScript --verify --slow --broadcast --rpc-url ${ETH_RPC_URL} -vvvv --keystore ${ETH_KEYSTORE} --priority-gas-price ${ETH_PRIO_FEE} --base-fee ${ETH_GAS_PRICE}
+dry-run-sepolia :; make build && forge script --chain sepolia script/MaseerVest.s.sol:MaseerVestScript --rpc-url ${SEPOLIA_RPC_URL} -vvvv --keystore ${ETH_KEYSTORE} --priority-gas-price ${ETH_PRIO_FEE} --base-fee ${ETH_GAS_PRICE}
+deploy-sepolia  :; make build && forge script --chain sepolia script/MaseerVest.s.sol:MaseerVestScript --verify --slow --broadcast --rpc-url ${SEPOLIA_RPC_URL} -vvvv --keystore ${ETH_KEYSTORE} --priority-gas-price ${ETH_PRIO_FEE} --base-fee ${ETH_GAS_PRICE}
