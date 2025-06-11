@@ -1,66 +1,76 @@
-## Foundry
+# maseer-vest
 
-**Foundry is a blazing fast, portable and modular toolkit for Ethereum application development written in Rust.**
+A token vesting plan for contributors. Includes scheduling, cliff vesting, and third-party revocation.
 
-Foundry consists of:
+### Requirements
 
--   **Forge**: Ethereum testing framework (like Truffle, Hardhat and DappTools).
--   **Cast**: Swiss army knife for interacting with EVM smart contracts, sending transactions and getting chain data.
--   **Anvil**: Local Ethereum node, akin to Ganache, Hardhat Network.
--   **Chisel**: Fast, utilitarian, and verbose solidity REPL.
+- [Foundry](https://getfoundry.sh/)
 
-## Documentation
+### Deployment
 
-https://book.getfoundry.sh/
+`maseer-vest` allows DAOs to create a participant vesting plan from operational funds
 
-## Usage
+#### MaseerVest
 
-### Build
+Pass the authorized sender address and the address of the token contract to the constructor to set up the contract for streaming arbitrary ERC20 tokens. Note: this contract must be given ERC `approve()` authority to withdraw tokens from this contract.
 
-```shell
-$ forge build
-```
+After deployment, the owner must also set the `cap` value using the `file` function.
 
-### Test
+### Creating a vest
 
-```shell
-$ forge test
-```
+#### `create(_usr, _tot, _bgn, _tau, _eta, _mgr) returns (id)`
 
-### Format
+Create a new vesting plan.
 
-```shell
-$ forge fmt
-```
+- `_usr`: The plan beneficiary
+- `_tot`: The total amount of the vesting plan, in token units
+  - ex. 100 USDT = `100 * 10**6`
+- `_bgn`: A unix-timestamp of the plan start date
+- `_tau`: The duration of the vesting plan (in seconds)
+- `_eta`: The cliff period, a duration in seconds from the `_bgn` time, in which tokens are accrued but not payable. (in seconds)
+- `_mgr`: (Optional) The address of an authorized manager. This address has permission to remove the vesting plan when the contributor leaves the project.
+  - Note: `auth` users on this contract _always_ have the ability to `yank` a vesting contract.
 
-### Gas Snapshots
+### Interacting with a vest
 
-```shell
-$ forge snapshot
-```
+#### `vest(_id)`
 
-### Anvil
+The vesting plan participant calls `vest(id)` after the cliff period to pay out all accrued and unpaid tokens.
 
-```shell
-$ anvil
-```
+#### `vest(_id, _maxAmt)`
 
-### Deploy
+The vesting plan participant calls `vest(id, maxAmt)` after the cliff period to pay out accrued and unpaid tokens, up to maxAmt.
 
-```shell
-$ forge script script/Counter.s.sol:CounterScript --rpc-url <your_rpc_url> --private-key <your_private_key>
-```
+#### `move(_id, _dst)`
 
-### Cast
+The vesting plan participant can transfer their contract `_id` control and ownership to another address `_dst`.
 
-```shell
-$ cast <subcommand>
-```
+#### `unpaid(_id) returns (amt)`
 
-### Help
+Returns the amount of accrued, vested, unpaid tokens.
 
-```shell
-$ forge --help
-$ anvil --help
-$ cast --help
-```
+#### `accrued(_id) returns (amt)`
+
+Returns the amount of tokens that have accrued from the beginning of the plan to the current block.
+
+#### `valid(_id) returns (bool)`
+
+Returns true if the plan id is valid and has not been claimed or yanked before the cliff.
+
+#### `restrict(uint256)`
+
+Allows governance or the owner to restrict vesting to the owner only.
+
+#### `unrestrict(uint256)`
+
+Allows governance or the owner to enable permissionless vesting.
+
+### Revoking a vest
+
+#### `yank(_id)`
+
+An authorized user (ex. governance) of the vesting contract, or an optional plan manager, can `yank` a vesting contract. If the contract is yanked prior to the plan cliff, no funds will be paid out. If a plan is `yank`ed after the contract cliff period has ended, new accruals will cease and the participant will be able to call `vest` to claim any vested funds.
+
+#### `yank(_id, _end)`
+
+Allows governance to schedule a point in the future to end the vest. Used for planned offboarding of contributors.
